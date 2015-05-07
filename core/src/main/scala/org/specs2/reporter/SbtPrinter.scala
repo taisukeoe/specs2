@@ -2,14 +2,17 @@ package org.specs2
 package reporter
 
 import data.Fold
-import org.specs2.control.{Actions, Action}
-import org.specs2.execute.Details
+import control.{Actions, Action}
+import execute.Details
+import foldm._, FoldM._
+import Fold._
+import org.specs2.foldm.stream.FoldProcessM.SinkTask
+import scalaz._, Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream._
-import sbt.testing._
-import Fold._
-import org.specs2.text.AnsiColors._
 import scalaz.stream.io._
+import sbt.testing._
+import org.specs2.text.AnsiColors._
 import main.Arguments
 import specification.core._
 import SbtPrinter._
@@ -40,14 +43,14 @@ trait SbtPrinter extends Printer {
    * - one for logging messages to the console
    * - one for registering sbt events
    */
-  def fold(env: Env, spec: SpecStructure): Fold[Fragment] =
-    textFold(env, spec) >> eventFold(env, spec)
+  def sink(env: Env, spec: SpecStructure): SinkTask[Fragment] =
+    textSink(env, spec) <* eventSink(env, spec)
 
-  def textFold(env: Env, spec: SpecStructure) =
-    textPrinter.fold(env.setLineLogger(SbtLineLogger(loggers)), spec)
+  def textSink(env: Env, spec: SpecStructure): SinkTask[Fragment] =
+    textPrinter.sink(env.setLineLogger(SbtLineLogger(loggers)), spec)
 
-  def eventFold(env: Env, spec: SpecStructure) =
-    sbtNotifierPrinter(env.arguments).fold(env, spec)
+  def eventSink(env: Env, spec: SpecStructure): SinkTask[Fragment] =
+    sbtNotifierPrinter(env.arguments).sink(env, spec)
 }
 
 object SbtPrinter {
